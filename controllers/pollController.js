@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const Poll = require("../models/Poll");
 
+// Create new poll
 exports.createPoll = async (req, res) => {
     const { question, type, options, creatorId } = req.body;
 
@@ -68,3 +69,5 @@ exports.createPoll = async (req, res) => {
             .json({ message: "Error registering user", error: error.message })
     }
 }
+
+// Get all polls
