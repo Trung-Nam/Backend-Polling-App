@@ -1,7 +1,17 @@
 const express = require("express");
 const { protect } = require("../middleware/authMiddleware");
 
-const { createPoll } = require("../controllers/pollController");
+const {
+    createPoll,
+    getAllPolls,
+    getVotedPolls,
+    getPollById,
+    voteOnPoll,
+    closePoll,
+    bookmarkPoll,
+    getBookmarkPolls,
+    deletePoll
+} = require("../controllers/pollController");
 
 const router = express.Router();
 
@@ -12,7 +22,7 @@ router.get("/:id", protect, getPollById);
 router.post("/:id/vote", protect, voteOnPoll);
 router.post("/:id/close", protect, closePoll);
 router.post("/:id/bookmark", protect, bookmarkPoll);
-router.get("/:id/bookmarked", protect, getBookmarkPoll);
+router.get("/:id/bookmarked", protect, getBookmarkPolls);
 router.delete("/:id/delete", protect, deletePoll);
 
 
