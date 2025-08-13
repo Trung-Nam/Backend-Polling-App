@@ -388,7 +388,21 @@ exports.getBookmarkPolls = async (req, res) => {
 }
 // Delete poll
 exports.deletePoll = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
     try {
+        const poll = await Poll.findById(id);
+        if (!poll) {
+            return res.status(404).json({ message: "Poll not found" });
+        }
+
+        if (poll.creator.toString() !== userId) {
+            return res.status(403).json({ message: "You are not authorized to delete this poll." });
+        }
+
+        await Poll.findByIdAndDelete(id);
+
+        res.status(200).json({ message: "Poll deleted successfully" });
 
     } catch (error) {
         res
