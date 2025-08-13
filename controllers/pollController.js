@@ -74,7 +74,7 @@ exports.createPoll = async (req, res) => {
 exports.getAllPolls = async (req, res) => {
     const { type, creatorId, page = 1, limit = 10 } = req.query;
     const filter = {};
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     if (type) {
         filter.type = type;
@@ -174,7 +174,7 @@ exports.getAllPolls = async (req, res) => {
 // Get all voted polls
 exports.getVotedPolls = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
-    const userId = req.user._id;
+    const userId = req.user.id;
     try {
         // Calculate pagination parameters
         const pageNumber = parseInt(page, 10);
@@ -287,7 +287,23 @@ exports.voteOnPoll = async (req, res) => {
 }
 // Close poll
 exports.closePoll = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
     try {
+        const poll = await Poll.findById(id);
+
+        if (!poll) {
+            return res.status(404).json({ message: "Poll not found" });
+        }
+
+        if (poll.creator.toString() !== userId) {
+            return res.status(403).json({ message: "You are not authorized to close this poll" });
+        }
+
+        poll.closed = true;
+        await poll.save();
+        res.status(200).json({ message: "Poll closed successfully", poll });
+
 
     } catch (error) {
         res
