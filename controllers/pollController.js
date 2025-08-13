@@ -352,8 +352,34 @@ exports.bookmarkPoll = async (req, res) => {
 }
 // Get all bookmarked polls
 exports.getBookmarkPolls = async (req, res) => {
+    const userId = req.user.id;
     try {
+        const user = await User.findById(userId).populate({
+            path: "bookmarkedPolls",
+            populate: {
+                path: "creator",
+                select: "fullName username email profileImageUrl",
+            },
+        });
 
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const bookmarkedPolls = user.bookmarkedPolls;
+
+        // Add `userHasVoted` flag for each poll
+        const updatedPolls = bookmarkedPolls.map((poll) => {
+            const userHasVoted = poll.voters.some((voterId) =>
+                voterId.equals(userId)
+            );
+            return {
+                ...poll.toObject(),
+                userHasVoted,
+            };
+        });
+
+        res.status(200).json({ bookmarkedPolls: updatedPolls });
     } catch (error) {
         res
             .status(500)
