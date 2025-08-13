@@ -173,7 +173,44 @@ exports.getAllPolls = async (req, res) => {
 
 // Get all voted polls
 exports.getVotedPolls = async (req, res) => {
+    const { page = 1, limit = 10 } = req.query;
+    const userId = req.user._id;
     try {
+        // Calculate pagination parameters
+        const pageNumber = parseInt(page, 10);
+        const pageSize = parseInt(limit, 10);
+        const skip = (pageNumber - 1) * pageSize;
+
+        // Fetch polls where the user has voted
+        const polls = await Poll.find({ voters: userId })
+            .populate({
+                path: "responses.voterId",
+                select: "username profileImageUrl fullName",
+            })
+            .skip(skip)
+            .limit(pageSize);
+
+        // Add `userHasVoted` flag for each poll
+        const updatedPolls = polls.map((poll) => {
+            const userHasVoted = poll.voters.some((voterId) =>
+                voterId.equals(userId)
+            );
+            return {
+                ...poll.toObject(),
+                userHasVoted,
+            };
+        });
+
+        // Get total count of polls for pagination metadata
+        const totalVotedPolls = await Poll.countDocuments({ voters: userId });
+
+        res.status(200).json({
+            polls: updatedPolls,
+            currentPage: pageNumber,
+            totalPages: Math.ceil(totalVotedPolls / pageSize),
+            totalVotedPolls,
+        });
+
 
     } catch (error) {
         res
