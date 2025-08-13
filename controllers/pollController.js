@@ -313,7 +313,36 @@ exports.closePoll = async (req, res) => {
 }
 // Bookmark poll
 exports.bookmarkPoll = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
     try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Check if poll is already bookmarked
+        const isBookmarked = user.bookmarkedPolls.includes(id);
+
+        if (isBookmarked) {
+            // Remove poll from user's bookmarkedPolls array
+            user.bookmarkedPolls = user.bookmarkedPolls.filter((pollId) => pollId.toString() !== id);
+
+            await user.save();
+            res.status(200).json({
+                message: "Poll removed from bookmarks",
+                bookmarkedPolls: user.bookmarkedPolls,
+            });
+        } else {
+            // Add poll to user's bookmarkedPolls array
+            user.bookmarkedPolls.push(id);
+            await user.save();
+
+            res.status(200).json({
+                message: "Poll bookmarked successfully",
+                bookmarkedPolls: user.bookmarkedPolls,
+            });
+        }
 
     } catch (error) {
         res
