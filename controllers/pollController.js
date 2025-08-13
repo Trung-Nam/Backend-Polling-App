@@ -193,7 +193,46 @@ exports.getPollById = async (req, res) => {
 }
 // Vote poll
 exports.voteOnPoll = async (req, res) => {
+    const { id } = req.params;
+    const { optionIndex, voterId, responseText } = req.body;
+
     try {
+        const poll = await Poll.findById(id);
+        if (!poll) {
+            return res.status(404).json({ message: "Poll not found" });
+        }
+
+        if (poll.closed) {
+            return res.status(400).json({ message: "Poll is closed" });
+        }
+
+        if (poll.voters.includes(voterId)) {
+            return res.status(400).json({ message: "You have already voted on this poll" });
+        }
+
+        if (poll.type === "open-ended") {
+            if (!responseText) {
+                return res.status(400).json({ message: "Response text is required for open-ended poll" });
+            }
+            poll.responses.push({
+                voterId,
+                responseText: responseText,
+            });
+        } else {
+            if (optionIndex === undefined ||
+                optionIndex < 0 ||
+                optionIndex >= poll.options.length
+            ) {
+                return res.status(400).json({ message: "Invalid option index" });
+            }
+
+            poll.options[optionIndex].votes += 1;
+        }
+
+        poll.voters.push(voterId);
+        await poll.save();
+
+        res.status(200).json(poll);
 
     } catch (error) {
         res
