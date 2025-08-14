@@ -183,6 +183,7 @@ exports.getVotedPolls = async (req, res) => {
 
         // Fetch polls where the user has voted
         const polls = await Poll.find({ voters: userId })
+            .populate("creator", "fullName username email profileImageUrl")
             .populate({
                 path: "responses.voterId",
                 select: "username profileImageUrl fullName",
@@ -358,13 +359,20 @@ exports.bookmarkPoll = async (req, res) => {
 exports.getBookmarkPolls = async (req, res) => {
     const userId = req.user.id;
     try {
-        const user = await User.findById(userId).populate({
-            path: "bookmarkedPolls",
-            populate: {
-                path: "creator",
-                select: "fullName username email profileImageUrl",
-            },
-        });
+        const user = await User.findById(userId)
+            .populate({
+                path: "bookmarkedPolls",
+                populate: [
+                    {
+                        path: "creator",
+                        select: "fullName username email profileImageUrl",
+                    },
+                    {
+                        path: "responses.voterId",
+                        select: "fullName username profileImageUrl",
+                    }
+                ],
+            });
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
